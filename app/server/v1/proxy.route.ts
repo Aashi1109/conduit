@@ -1,7 +1,12 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { authenticate, rateLimiter, usageLogger } from "../middlewares";
+import {
+  authenticate,
+  morganLogger,
+  rateLimiter,
+  usageLogger,
+} from "../middlewares";
 import { config, logger } from "@/shared";
 
 const router: Router = Router();
