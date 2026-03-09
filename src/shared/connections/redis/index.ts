@@ -19,9 +19,7 @@ const connect = (name: RedisConnectionName) => {
 
 export async function disconnectRedisConnections() {
   const disconnecting: Array<Promise<unknown>> = [];
-  for (const name of Object.keys(
-    redisConnections,
-  ) as RedisConnectionName[]) {
+  for (const name of Object.keys(redisConnections) as RedisConnectionName[]) {
     const client = redisConnections[name];
     if (client && typeof (client as any).close === "function") {
       disconnecting.push((client as any).close());
@@ -30,7 +28,9 @@ export async function disconnectRedisConnections() {
   return Promise.all(disconnecting);
 }
 
-export function getRedisConnection(name: RedisConnectionName = REDIS_CONNECTION_NAMES.Default) {
+export function getRedisConnection(
+  name: RedisConnectionName = REDIS_CONNECTION_NAMES.Default,
+) {
   if (redisConnections[name]) {
     return redisConnections[name]!;
   }

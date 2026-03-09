@@ -4,7 +4,7 @@
   "description": "Conduit backend service",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.json && tscpaths -p tsconfig.json -s ./src -o ./dist",
+    "build": "rm -rf dist && tsc --project tsconfig.json && tscpaths -p tsconfig.json -s . -o ./dist",
     "start": "APP_TYPE=server node dist/index.js",
     "dev": "APP_TYPE=server nodemon --watch . --ext ts --exec \"tsx -r tsconfig-paths/register\" index.ts"
   },
