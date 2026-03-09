@@ -29,6 +29,10 @@ const isProxyRoute = (req: express.Request) =>
 app.use((req, res, next) => {
   if (isProxyRoute(req)) return next();
   express.json({ limit: config.express.fileSizeLimit })(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (isProxyRoute(req)) return next();
   express.urlencoded({ extended: true, limit: config.express.fileSizeLimit })(
     req,
     res,
