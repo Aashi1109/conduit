@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: conduit-server
+    platform: linux/amd64
     image: aashishpal09/conduit:latest
     environment:
       NODE_ENV: production
