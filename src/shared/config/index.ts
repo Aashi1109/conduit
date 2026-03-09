@@ -53,8 +53,8 @@ const config = {
     [DB_CONNECTION_NAMES.Default]: process.env.DATABASE_URL || "",
   },
   infrastructure: {
-    appName: "bhandara",
-    serviceName: "bhandara-main-server",
+    appName: "conduit",
+    serviceName: "conduit-main-server",
   },
   security: {
     internalSecret: process.env.INTERNAL_SECRET || "",
