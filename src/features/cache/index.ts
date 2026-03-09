@@ -48,22 +48,25 @@ class RedisCache {
     ) {
       const originalMethod = descriptor.value;
       const _options: MethodCacheOptions = {
-        timeToLiveSeconds: this.defaultTTLSeconds,
-        skipCacheGet: false,
-        skipCacheSet: false,
-        ...methodOptions,
+        timeToLiveSeconds: methodOptions.timeToLiveSeconds,
+        skipCacheGet: methodOptions.skipCacheGet ?? false,
+        skipCacheSet: methodOptions.skipCacheSet ?? false,
+        customKeyGenerator: methodOptions.customKeyGenerator,
       };
 
-      descriptor.value = async function (...methodArgs: any[]) {
+      descriptor.value = async function (
+        this: RedisCache,
+        ...methodArgs: any[]
+      ) {
         // Build cache key
-        const keyPart = methodOptions.customKeyGenerator
-          ? methodOptions.customKeyGenerator(methodArgs)
+        const keyPart = _options.customKeyGenerator
+          ? _options.customKeyGenerator(methodArgs)
           : `${methodName}:${JSON.stringify(methodArgs)}`;
         const cacheKey = `${this.cacheNamespace}:${keyPart}`;
 
         try {
           // Try cache first if not skipped
-          if (!methodOptions.skipCacheGet) {
+          if (!_options.skipCacheGet) {
             const cachedResult = await this.getItem(cacheKey);
             if (cachedResult) return cachedResult;
           }
@@ -74,11 +77,13 @@ class RedisCache {
 
           // Cache the result if successful
           if (
-            !methodOptions.skipCacheSet &&
+            !_options.skipCacheSet &&
             databaseResult &&
             !databaseResult.error
           ) {
-            await this.setItem(cacheKey, databaseResult, _options.timeToLiveSeconds);
+            const ttl =
+              _options.timeToLiveSeconds ?? this.defaultTTLSeconds;
+            await this.setItem(cacheKey, databaseResult, ttl);
           }
 
           return databaseResult;
@@ -160,9 +165,8 @@ class RedisCache {
     const namespacedKey = `${this.cacheNamespace}:${key}`;
     return (async () => {
       const entry = await CacheEntry.findOne({ where: { key: namespacedKey } });
-      if (!entry || entry.expiresAt?.getTime() <= Date.now()) {
-        return null;
-      }
+      if (!entry) return null;
+      if (entry.expiresAt && entry.expiresAt.getTime() <= Date.now()) return null;
       const map = entry.value as Record<string, unknown>;
       return map ? map[field] ?? null : null;
     })();
@@ -172,8 +176,9 @@ class RedisCache {
     const namespacedKey = `${this.cacheNamespace}:${key}`;
     return (async () => {
       const entry = await CacheEntry.findOne({ where: { key: namespacedKey } });
-      if (!entry || entry.expiresAt?.getTime() <= Date.now()) {
-        return {};
+      if (!entry) return {} as Record<string, unknown>;
+      if (entry.expiresAt && entry.expiresAt.getTime() <= Date.now()) {
+        return {} as Record<string, unknown>;
       }
       return entry.value as Record<string, unknown>;
     })();
@@ -202,8 +207,9 @@ class RedisCache {
     const namespacedKey = `${this.cacheNamespace}:${key}`;
     return (async () => {
       const entry = await CacheEntry.findOne({ where: { key: namespacedKey } });
-      if (!entry || entry.expiresAt?.getTime() <= Date.now()) {
-        return [];
+      if (!entry) return [] as unknown[];
+      if (entry.expiresAt && entry.expiresAt.getTime() <= Date.now()) {
+        return [] as unknown[];
       }
       const list = Array.isArray(entry.value) ? (entry.value as unknown[]) : [];
       return list.map((item) => jnstringify(item));
@@ -252,17 +258,20 @@ class RedisCache {
    */
   cacheWrapper<T extends (...args: any[]) => Promise<any>>(
     fn: T,
-    options: MethodCacheOptions = {}
-  ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+    options: MethodCacheOptions = {},
+  ): (...args: Parameters<T>) => Promise<any> {
     // const redisClient = this.redisClient;
     // const cacheNamespace = this.cacheNamespace;
     // const defaultTTL = this.defaultTTLSeconds;
 
-    return async function (...args: Parameters<T>): Promise<ReturnType<T>> {
+    return async function (
+      this: RedisCache,
+      ...args: Parameters<T>
+    ): Promise<any> {
       const keyPart = options.customKeyGenerator
         ? options.customKeyGenerator(args)
         : `${fn.name}:${JSON.stringify(args)}`;
-      const cacheKey = keyPart;
+      const cacheKey = `${this.cacheNamespace}:${keyPart}`;
       const ttl = options.timeToLiveSeconds || this.defaultTTLSeconds;
 
       try {
@@ -282,23 +291,6 @@ class RedisCache {
         return fn(...args);
       }
     };
-  }
-
-  updateValue(key: string, newValue: any) {
-    const namespacedKey = `${this.cacheNamespace}:${key}`;
-    return this.redisClient.set(namespacedKey, jnstringify(newValue), {
-      keepTtl: true,
-    });
-  }
-
-  getTTL(key: string) {
-    const namespacedKey = `${this.cacheNamespace}:${key}`;
-    return this.redisClient.ttl(namespacedKey);
-  }
-
-  setTTL(key: string, ttl: number) {
-    const namespacedKey = `${this.cacheNamespace}:${key}`;
-    return this.redisClient.expire(namespacedKey, ttl);
   }
 
   get defaultTTLMs() {

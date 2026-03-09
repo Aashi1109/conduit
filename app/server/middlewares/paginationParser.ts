@@ -1,11 +1,33 @@
-import { IRequestPagination } from "@/shared/defs/types";
 import logger from "@/shared/logger";
-import { NextFunction, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
+
+interface PaginationInfo {
+  limit: number;
+  page: number;
+  sortBy: string | null;
+  sortOrder: "asc" | "desc" | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  next: string | null;
+}
+
+interface PaginationRequest extends Request {
+  query: Request["query"] & {
+    limit?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    next?: string;
+    page?: string;
+    startDate?: string;
+    endDate?: string;
+  };
+  pagination?: PaginationInfo;
+}
 
 const paginationParser = (
-  req: IRequestPagination,
+  req: PaginationRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const {
     limit,
