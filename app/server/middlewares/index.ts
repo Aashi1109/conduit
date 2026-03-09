@@ -6,3 +6,4 @@ export { default as validateParams } from "./validateParams";
 export { default as authenticate } from "./authenticate";
 export { default as rateLimiter } from "./rateLimiter";
 export { default as usageLogger } from "./usageLogger";
+export { default as adminChecker } from "./adminChecker";

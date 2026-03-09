@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { asyncHandler } from "../middlewares";
+import { adminChecker, asyncHandler } from "../middlewares";
 import {
   listKeys,
   updateKey,
@@ -9,6 +9,8 @@ import {
 } from "@/features/admin/service";
 
 const router: ExpressRouter = Router();
+
+router.use(adminChecker);
 
 /**
  * @openapi
@@ -52,7 +54,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const keys = await listKeys();
     res.json(keys);
-  })
+  }),
 );
 
 /**
@@ -105,9 +107,15 @@ router.patch(
       name?: string;
     };
 
-    const updated = await updateKey({ id, isActive, rateLimit, rateWindow, name });
+    const updated = await updateKey({
+      id,
+      isActive,
+      rateLimit,
+      rateWindow,
+      name,
+    });
     res.json(updated);
-  })
+  }),
 );
 
 /**
@@ -135,7 +143,7 @@ router.delete(
     const { id } = req.params as { id: string };
     await deleteKey(id);
     res.status(204).send();
-  })
+  }),
 );
 
 /**
@@ -231,7 +239,7 @@ router.get(
       limit: limit ? Number(limit) : undefined,
     });
     res.json(logs);
-  })
+  }),
 );
 
 /**
@@ -268,8 +276,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const rows = await usageSummary();
     res.json(rows);
-  })
+  }),
 );
 
 export default router;
-
