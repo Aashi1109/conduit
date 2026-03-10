@@ -10,14 +10,17 @@ export const jnparse = (payload: any) => JSON.parse(payload);
  */
 export const pick = <T extends Record<string, any>, K extends keyof T>(
   obj: T,
-  keys: K[]
+  keys: K[],
 ) => {
-  return keys.reduce((acc, key) => {
-    if (obj[key] !== undefined) {
-      acc[key] = obj[key];
-    }
-    return acc;
-  }, {} as Pick<T, K>);
+  return keys.reduce(
+    (acc, key) => {
+      if (obj[key] !== undefined) {
+        acc[key] = obj[key];
+      }
+      return acc;
+    },
+    {} as Pick<T, K>,
+  );
 };
 
 /**
@@ -25,7 +28,7 @@ export const pick = <T extends Record<string, any>, K extends keyof T>(
  */
 export const omit = <T extends Record<string, any>, K extends keyof T>(
   obj: T,
-  keys: K[]
+  keys: K[],
 ) => {
   const newObj = { ...obj };
   keys.forEach((key) => {
@@ -111,11 +114,9 @@ export function startCase(value: string): string {
     .trim()
     .replace(
       /\w\S*/g,
-      (txt: string) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
+      (txt: string) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase(),
     );
 }
-
-
 
 /**
  * Generates a random alphanumeric ID string.

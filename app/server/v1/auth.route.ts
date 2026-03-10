@@ -1,13 +1,10 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { asyncHandler } from "../middlewares";
+import { asyncHandler, authenticate } from "../middlewares";
 import { registerUser, rotateKey, recoverKey } from "@/features/auth/service";
 import {
   validateRegisterPayload,
   validateRotatePayload,
   validateRecoverPayload,
-  type RegisterBody,
-  type RotateBody,
-  type RecoverBody,
 } from "@/features/auth/validations";
 import { UnauthorizedError } from "@/shared";
 
@@ -65,12 +62,14 @@ router.post(
     const result = await registerUser({ name, email });
 
     return res.status(201).json({
-      message: "Registered successfully. Credentials will be delivered to your email.",
+      message:
+        "Registered successfully. Credentials will be delivered to your email.",
       user_id: result.userId,
     });
-  })
+  }),
 );
 
+router.use(authenticate);
 /**
  * @openapi
  * /api/v1/auth/rotate:
@@ -129,9 +128,10 @@ router.post(
     });
 
     return res.status(200).json({
-      message: "Key rotated. New credentials have been sent to your registered email.",
+      message:
+        "Key rotated. New credentials have been sent to your registered email.",
     });
-  })
+  }),
 );
 
 /**
@@ -182,8 +182,7 @@ router.post(
     await recoverKey({ email });
 
     return res.status(200).json(genericResponse);
-  })
+  }),
 );
 
 export default router;
-
