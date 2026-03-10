@@ -15,7 +15,7 @@ const customFormat = format.printf(
       stack: stack,
     };
     return JSON.stringify(logMessage);
-  }
+  },
 );
 
 // Create a daily rotate transport for all logs
@@ -47,18 +47,16 @@ const logger = createLogger({
     format.timestamp({
       format: "YYYY-MM-DD HH:mm:ss",
     }),
-    customFormat
+    customFormat,
   ),
   transports: [allLogsTransport, errorLogsTransport],
   exitOnError: false,
 });
 
-if (env !== "production") {
-  logger.add(
-    new transports.Console({
-      format: format.combine(format.colorize({ all: true })),
-    })
-  );
-}
+logger.add(
+  new transports.Console({
+    format: format.combine(format.colorize({ all: true })),
+  }),
+);
 
 export default logger;

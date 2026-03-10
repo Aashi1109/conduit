@@ -17,7 +17,8 @@ const swaggerOptions: swaggerJSDoc.Options = {
     ],
   },
   // Paths are resolved from the project root where the process runs.
-  apis: ["./app/server/**/*.ts"],
+  // Include both .ts (dev) and .js (build) — compiled output preserves JSDoc.
+  apis: ["./app/server/**/*.ts", "./app/server/**/*.js"],
 };
 
 export const swaggerSpec = swaggerJSDoc(swaggerOptions);
