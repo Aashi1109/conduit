@@ -1,12 +1,7 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
-import {
-  authenticate,
-  morganLogger,
-  rateLimiter,
-  usageLogger,
-} from "../middlewares";
+import { authenticate, rateLimiter, usageLogger } from "../middlewares";
 import { config, logger } from "@/shared";
 
 const router: Router = Router();
@@ -64,7 +59,7 @@ interface ServiceConfig {
  *         description: Server or upstream error.
  */
 function discoverServices(): ServiceConfig[] {
-  const services = config.services.map((svc) => ({
+  const services = Object.values(config.services).map((svc) => ({
     name: svc.name,
     path: `/${svc.name}`,
     target: svc.url,

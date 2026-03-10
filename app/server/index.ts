@@ -16,9 +16,27 @@ import { swaggerSpec } from "./docs/swagger";
 
 const app = express();
 
+// Trust proxy for Cloud Run/Load Balancer protocol headers (HTTPS)
+app.set("trust proxy", true);
+
 // cors setup to allow requests from the frontend only for now
-app.use(helmet());
+// CORS should come before helmet to ensure headers are set correctly
 app.use(cors(config.corsOptions));
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        // Allow inline styles and scripts for Swagger UI
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        // Allow connections to the server itself (important for Swagger Try it out)
+        "connect-src": ["'self'", config.baseUrl],
+      },
+    },
+  }),
+);
 
 // Skip body parsing for proxy routes — their raw stream must stay intact
 // so http-proxy-middleware can pipe it to the upstream directly.

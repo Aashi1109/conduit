@@ -1,13 +1,25 @@
 import type { RequestHandler } from "express";
-import { ApiKey, RefreshToken } from "@/features/auth/model";
+import { ApiKey } from "@/features/auth/model";
 import { User } from "@/features/user/model";
-import { hashToken } from "@/shared";
+import { hashToken, UnauthorizedError } from "@/shared";
+import config from "@/shared/config";
 
 const authenticate: RequestHandler = async (req, res, next) => {
+  // Skip authentication if the current relative path matches any skipPaths from config
+  // (e.g., /docs, /healthz). For proxied services, req.path is the sub-path.
+  const servicePath = /\/proxy\/([^\/]+)/.exec(req.originalUrl);
+
+  if (servicePath) {
+    const service = config.services[servicePath[1]];
+    if (service.skipPaths.includes(req.path)) {
+      return next();
+    }
+  }
   try {
     const headerKey = req.header("X-API-Key");
     const authHeader = req.header("Authorization");
-    const queryKey = typeof req.query.api_key === "string" ? req.query.api_key : undefined;
+    const queryKey =
+      typeof req.query.api_key === "string" ? req.query.api_key : undefined;
 
     const bearerMatch =
       authHeader && authHeader.startsWith("Bearer ")
@@ -16,11 +28,8 @@ const authenticate: RequestHandler = async (req, res, next) => {
 
     const rawKey = headerKey || bearerMatch || queryKey;
 
-    if (!rawKey) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (!rawKey) throw new UnauthorizedError(`Missing api key`);
 
-    const keyPrefix = rawKey.slice(0, 8);
     const tokenHash = hashToken(rawKey);
 
     const apiKey = await ApiKey.findOne({
@@ -28,13 +37,9 @@ const authenticate: RequestHandler = async (req, res, next) => {
       include: [{ model: User }],
     });
 
-    if (!apiKey) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (!apiKey) throw new UnauthorizedError(`Missing api key`);
 
-    if (!apiKey.isActive) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    if (!apiKey.isActive) throw new UnauthorizedError(`Forbidden`);
 
     // Attach to request, including associated user if present
     const userInstance = (apiKey as any).user;
@@ -59,4 +64,3 @@ const authenticate: RequestHandler = async (req, res, next) => {
 };
 
 export default authenticate;
-

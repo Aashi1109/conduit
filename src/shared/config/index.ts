@@ -6,9 +6,11 @@ loadEnv({ path: ".env" });
 type ServiceConfig = {
   name: string;
   url: string;
+  id: string;
+  skipPaths: string[];
 };
 
-const services: ServiceConfig[] = [];
+const services: Record<ServiceConfig["id"], ServiceConfig> = {};
 
 for (const [key, value] of Object.entries(process.env)) {
   const match = key.match(/^PROXY_SERVICE_(.+)_URL$/);
@@ -16,10 +18,18 @@ for (const [key, value] of Object.entries(process.env)) {
 
   const nameSegment = match[1];
 
-  services.push({
+  const skipPaths =
+    process.env[`PROXY_SERVICE_${nameSegment}_SKIP_PATHS`] || "";
+
+  services[nameSegment.toLowerCase()] = {
     name: nameSegment.toLowerCase(),
     url: value,
-  });
+    id: nameSegment.toLowerCase(),
+    skipPaths: skipPaths
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean),
+  };
 }
 
 const config = {
